@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fooddonation.ui.theme.black
+import com.fooddonation.ui.theme.yellow
 
 @Composable
 fun RoundedButton(text: String, isEnabled : Boolean = true, onClick: () -> Unit, textColor : Color = Color.White) {
@@ -26,7 +27,7 @@ fun RoundedButton(text: String, isEnabled : Boolean = true, onClick: () -> Unit,
         modifier = Modifier.padding(vertical = 5.dp).fillMaxWidth(),
         textColor = textColor,
         isEnabled = isEnabled,
-        gradient = Brush.horizontalGradient(listOf(black, black)),
+        gradient = Brush.horizontalGradient(listOf(yellow, yellow)),
         text = text
     )
 }

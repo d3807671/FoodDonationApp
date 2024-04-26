@@ -5,12 +5,14 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -39,11 +41,14 @@ fun FoodDonationBorderField(
     colors : TextFieldColors? = null,
     label : @Composable (() -> Unit)? = null,
 ) {
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     OutlinedTextField(
         value = value,
         shape = RoundedCornerShape(10.dp),
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType, capitalization = keyboardCapitalization),
+        keyboardActions = KeyboardActions(
+            onDone = {keyboardController?.hide()}),
         visualTransformation = visualTransformation,
         enabled = isEnabled,
         readOnly = readOnly,

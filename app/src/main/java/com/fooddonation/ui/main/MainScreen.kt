@@ -1,18 +1,28 @@
 package com.fooddonation.ui.main
 
 import android.annotation.SuppressLint
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
+import android.content.Context
+import android.widget.DatePicker
 import android.widget.Toast
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.fooddonation.R
 import com.fooddonation.routing.Screen
@@ -28,6 +38,7 @@ import com.fooddonation.utils.FoodDonationBorderField
 import com.fooddonation.utils.RoundedButton
 import com.fooddonation.utils.isValidEmail
 import kotlinx.coroutines.launch
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "MutableCollectionMutableState")
@@ -49,6 +60,12 @@ fun MainScreen(navController: NavController) {
     var mobile by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
+    var quality by remember { mutableStateOf("") }
+    var selectedDate by remember { mutableStateOf("") }
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    var selectTime by remember { mutableStateOf("") }
+    var showTimePicker by remember { mutableStateOf(false) }
 
     FoodDonationAppTheme {
         androidx.compose.material.Scaffold(
@@ -168,19 +185,63 @@ fun MainScreen(navController: NavController) {
                     keyboardType = KeyboardType.Text,
                 )
                 Spacer(modifier = Modifier.height(20.dp))
+                FoodDonationBorderField(
+                    value = if (selectedDate != "") selectedDate else "Select Date",
+                    onValueChange = { text ->
+                        selectedDate = text
+                    },
+                    onClick = {
+                        showDatePicker = true
+                    },
+                    isEnabled = false,
+                    placeholder = "Select Date"
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                if (showDatePicker) {
+                    context.DatePickerDialogBox(onDateSelect = {
+                        selectedDate = it
+                        showDatePicker = false
+                    })
+                }
+                Spacer(modifier = Modifier.height(20.dp))
+                FoodDonationBorderField(
+                    value = if (selectTime != "") selectTime else "Select Time",
+                    onValueChange = { text ->
+                        selectTime = text
+                    },
+                    onClick = {
+                        showTimePicker = true
+                    },
+                    isEnabled = false,
+                    placeholder = "Select Time"
+                )
+                if (showTimePicker) {
+                    context.TimePickerDialogBox {
+                        selectTime = it
+                        showTimePicker = false
+                    }
+                }
+                Spacer(modifier = Modifier.height(20.dp))
                 Text(
-                    "Address",
+                    "Quality",
                     modifier = Modifier.fillMaxWidth(),
                     style = TextStyle(color = black)
                 )
                 Spacer(modifier = Modifier.height(10.dp))
-                FoodDonationBorderField(
-                    value = address,
-                    onValueChange = { text ->
-                        address = text
+                OutlinedTextField(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .padding(start = 15.dp, top = 10.dp, end = 15.dp)
+                        .background(Color.White, RoundedCornerShape(5.dp)),
+                    shape = RoundedCornerShape(5.dp),
+                    value = quality,
+                    placeholder = {
+                        Text("Enter quality", fontSize = 16.sp)
                     },
-                    placeholder = "Enter address",
-                    keyboardType = KeyboardType.Text,
+                    onValueChange = { quality = it },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    maxLines = 3
                 )
                 Spacer(Modifier.height(30.dp))
                 Row(
@@ -196,6 +257,9 @@ fun MainScreen(navController: NavController) {
                             } else if (mobile.isEmpty()) {
                                 Toast.makeText(context, "Please enter mobile.", Toast.LENGTH_SHORT)
                                     .show()
+                            } else if (mobile.length<10) {
+                                Toast.makeText(context, "Please enter valid mobile.", Toast.LENGTH_SHORT)
+                                    .show()
                             } else if (email.isEmpty()) {
                                 Toast.makeText(context, "Please enter email.", Toast.LENGTH_SHORT)
                                     .show()
@@ -207,6 +271,15 @@ fun MainScreen(navController: NavController) {
                                 ).show()
                             } else if (address.isEmpty()) {
                                 Toast.makeText(context, "Please enter address.", Toast.LENGTH_SHORT)
+                                    .show()
+                            }  else if (selectedDate.isEmpty()) {
+                                Toast.makeText(context, "Please select date.", Toast.LENGTH_SHORT)
+                                    .show()
+                            } else if (selectTime.isEmpty()) {
+                                Toast.makeText(context, "Please select time.", Toast.LENGTH_SHORT)
+                                    .show()
+                            } else if (quality.isEmpty()) {
+                                Toast.makeText(context, "Please enter quality.", Toast.LENGTH_SHORT)
                                     .show()
                             } else {
                                 isSubmit = true
@@ -277,3 +350,41 @@ fun MainScreen(navController: NavController) {
 
 }
 
+@Composable
+fun Context.DatePickerDialogBox(
+    onDateSelect: (String) -> Unit
+) {
+    val year: Int
+    val month: Int
+    val day: Int
+    val mCalendar = Calendar.getInstance()
+    year = mCalendar.get(Calendar.YEAR)
+    month = mCalendar.get(Calendar.MONTH)
+    day = mCalendar.get(Calendar.DAY_OF_MONTH)
+
+    mCalendar.time = Date()
+    val mDatePickerDialog = DatePickerDialog(
+        this,
+        { _: DatePicker, mYear: Int, mMonth: Int, mDayOfMonth: Int ->
+            onDateSelect("$mDayOfMonth/${mMonth + 1}/$mYear")
+        }, year, month, day
+    )
+    mDatePickerDialog.show()
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+fun Context.TimePickerDialogBox(
+    onTimeSelect: (String) -> Unit
+) {
+    val mCalendar = Calendar.getInstance()
+    val hour = mCalendar[Calendar.HOUR_OF_DAY]
+    val minute = mCalendar[Calendar.MINUTE]
+    val mTimePickerDialog = TimePickerDialog(
+        this,
+        {_, mHour : Int, mMinute: Int ->
+            onTimeSelect("$mHour:$mMinute")
+        }, hour, minute, false
+    )
+    mTimePickerDialog.show()
+}
