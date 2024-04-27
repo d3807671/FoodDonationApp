@@ -35,6 +35,7 @@ import com.fooddonation.ui.theme.yellow
 import com.fooddonation.utils.FoodDonationBorderField
 import com.fooddonation.utils.RoundedButton
 import com.fooddonation.utils.isValidEmail
+import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -48,8 +49,7 @@ fun RegisterScreen(navController: NavController) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    val db = Firebase.firestore
-    val scrollState = rememberScrollState()
+    val firebaseAuth = FirebaseAuth.getInstance()
     FoodDonationAppTheme {
         Scaffold {
             Column(
@@ -88,7 +88,15 @@ fun RegisterScreen(navController: NavController) {
                         modifier = Modifier
                             .padding(20.dp)
                     ) {
-
+                        Spacer(modifier = Modifier.height(5.dp))
+                        FoodDonationBorderField(
+                            value = name,
+                            onValueChange = { text ->
+                                name = text
+                            },
+                            placeholder = "Enter name",
+                            keyboardType = KeyboardType.Text,
+                        )
                         Spacer(modifier = Modifier.height(5.dp))
                         FoodDonationBorderField(
                             value = email,
@@ -143,98 +151,36 @@ fun RegisterScreen(navController: NavController) {
 
                                 } else {
                                     isUserFood = true
-                                    val user = hashMapOf(
-                                        "name" to name,
-                                        "email" to email.lowercase(),
-                                        "password" to password
+                                    firebaseAuth.createUserWithEmailAndPassword(
+                                        email.lowercase(),
+                                        password
                                     )
-                                    db.collection("users")
-                                        .get()
-                                        .addOnSuccessListener { result ->
-                                            if (result.isEmpty) {
-                                                db.collection("users")
-                                                    .add(user)
-                                                    .addOnSuccessListener { documentReference ->
-                                                        preference.saveData(
-                                                            "isLogin",
-                                                            true
-                                                        )
-                                                        Toast.makeText(
-                                                            context,
-                                                            "Registered successfully.",
-                                                            Toast.LENGTH_SHORT
-                                                        ).show()
-                                                        navController.navigate(
-                                                            Screen.MainScreen.route
-                                                        ) {
-                                                            popUpTo(Screen.LoginScreen.route) {
-                                                                inclusive = true
-                                                            }
-                                                        }
-                                                        isUserFood = false
-                                                    }
-                                                    .addOnFailureListener { e ->
-
-                                                        Toast.makeText(
-                                                            context,
-                                                            e.message.toString(),
-                                                            Toast.LENGTH_SHORT
-                                                        ).show()
-                                                        isUserFood = false
-                                                    }
-                                            } else {
-                                                for (document in result) {
-                                                    if (document.data["email"] == email.lowercase() &&
-                                                        document.data["password"] == password
-                                                    ) {
-                                                        Toast.makeText(
-                                                            context,
-                                                            "User Already exists.",
-                                                            Toast.LENGTH_SHORT
-                                                        ).show()
-                                                        isUserFood = false
-                                                        return@addOnSuccessListener
-                                                    } else {
-                                                        db.collection("users")
-                                                            .add(user)
-                                                            .addOnSuccessListener { documentReference ->
-                                                                preference.saveData(
-                                                                    "isLogin",
-                                                                    true
-                                                                )
-                                                                Toast.makeText(
-                                                                    context,
-                                                                    "Registered successfully.",
-                                                                    Toast.LENGTH_SHORT
-                                                                ).show()
-                                                                navController.navigate(
-                                                                    Screen.MainScreen.route
-                                                                ) {
-                                                                    popUpTo(Screen.RegisterScreen.route) {
-                                                                        inclusive = true
-                                                                    }
-                                                                }
-                                                                isUserFood = false
-                                                            }
-                                                            .addOnFailureListener { e ->
-                                                                Toast.makeText(
-                                                                    context,
-                                                                    e.message.toString(),
-                                                                    Toast.LENGTH_SHORT
-                                                                ).show()
-                                                                isUserFood = false
-                                                            }
+                                        .addOnCompleteListener { task ->
+                                            if (task.isSuccessful) {
+                                                preference.saveData(
+                                                    "isLogin", true
+                                                )
+                                                Toast.makeText(
+                                                    context,
+                                                    "Register successfully.",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                                navController.navigate(
+                                                    Screen.MainScreen.route
+                                                ) {
+                                                    popUpTo(Screen.RegisterScreen.route) {
+                                                        inclusive = true
                                                     }
                                                 }
+                                                isUserFood = false
+                                            } else {
+                                                Toast.makeText(
+                                                    context,
+                                                    task.exception?.message.toString(),
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                                isUserFood = false
                                             }
-                                        }
-                                        .addOnFailureListener { exception ->
-                                            Toast.makeText(
-                                                context,
-                                                exception.message.toString(),
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                            isUserFood = false
                                         }
                                 }
                             }

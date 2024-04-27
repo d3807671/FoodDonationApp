@@ -36,6 +36,7 @@ import com.fooddonation.ui.theme.yellow
 import com.fooddonation.utils.FoodDonationBorderField
 import com.fooddonation.utils.RoundedButton
 import com.fooddonation.utils.isValidEmail
+import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -48,7 +49,7 @@ fun LoginScreen(navController: NavController) {
     var isUserFood by remember { mutableStateOf(false) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    val db = Firebase.firestore
+    val firebaseAuth = FirebaseAuth.getInstance()
     FoodDonationAppTheme {
         Scaffold {
             Column(
@@ -133,69 +134,29 @@ fun LoginScreen(navController: NavController) {
 
                                 } else {
                                     isUserFood = true
-                                    db.collection("users")
-                                        .get()
-                                        .addOnSuccessListener { result ->
-                                            if (result.isEmpty) {
+                                    firebaseAuth.signInWithEmailAndPassword(email.lowercase(), password)
+                                        .addOnCompleteListener { task ->
+                                            if (task.isSuccessful) {
+                                                preference.saveData(
+                                                    "isLogin", true
+                                                )
                                                 Toast.makeText(
-                                                    context,
-                                                    "User not exist.",
-                                                    Toast.LENGTH_LONG
+                                                    context, "Login successfully.", Toast.LENGTH_SHORT
                                                 ).show()
-                                                isUserFood = false
-                                                return@addOnSuccessListener
-                                            } else {
-                                                for (document in result) {
-                                                    if (document.data["email"] == email.lowercase() &&
-                                                        document.data["password"] == password
-                                                    ) {
-                                                        preference.saveData(
-                                                            "isLogin",
-                                                            true
-                                                        )
-                                                        Toast.makeText(
-                                                            context,
-                                                            "Logged in successfully.",
-                                                            Toast.LENGTH_LONG
-                                                        ).show()
-                                                        navController.navigate(
-                                                            Screen.MainScreen.route
-                                                        ) {
-                                                            popUpTo(Screen.LoginScreen.route) {
-                                                                inclusive = true
-                                                            }
-                                                        }
-                                                        isUserFood = false
-                                                    } else if (document.data["email"] == email.lowercase() &&
-                                                        document.data["password"] != password
-                                                    ) {
-                                                        Toast.makeText(
-                                                            context,
-                                                            "Please enter valid password.",
-                                                            Toast.LENGTH_LONG
-                                                        ).show()
-                                                        isUserFood = false
-                                                        return@addOnSuccessListener
-                                                    } else {
-                                                        Toast.makeText(
-                                                            context,
-                                                            "User not exist.",
-                                                            Toast.LENGTH_LONG
-                                                        ).show()
-                                                        isUserFood = false
-                                                        return@addOnSuccessListener
+                                                navController.navigate(
+                                                    Screen.MainScreen.route
+                                                ) {
+                                                    popUpTo(Screen.LoginScreen.route) {
+                                                        inclusive = true
                                                     }
                                                 }
+                                                isUserFood = false
+                                            } else {
+                                                Toast.makeText(
+                                                    context, task.exception?.message.toString(), Toast.LENGTH_SHORT
+                                                ).show()
+                                                isUserFood = false
                                             }
-
-                                        }
-                                        .addOnFailureListener { exception ->
-                                            Toast.makeText(
-                                                context,
-                                                exception.message.toString(),
-                                                Toast.LENGTH_LONG
-                                            ).show()
-                                            isUserFood = false
                                         }
                                 }
                             }
